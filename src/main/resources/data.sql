@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS product;
+
+CREATE TABLE product (
+  id UUID PRIMARY KEY,
+  name VARCHAR(250) NOT NULL,
+  description VARCHAR(250) NOT NULL,
+  brand VARCHAR(250) NOT NULL,
+  tags VARCHAR(2000) DEFAULT NULL,
+  category VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP NOT NULL
+);
