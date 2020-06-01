@@ -11,6 +11,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * ProductDto for JSON requests and responses.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,6 +25,6 @@ public class ProductDto implements Serializable {
     private String brand;
     private List<String> tags;
     private String category;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private Date created_at;
 }

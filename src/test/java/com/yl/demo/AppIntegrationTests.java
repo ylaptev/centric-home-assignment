@@ -1,6 +1,8 @@
 package com.yl.demo;
 
+import com.yl.demo.errors.ErrorResponse;
 import com.yl.demo.web.ProductDto;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,7 +10,10 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -17,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Slf4j
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 public class AppIntegrationTests {
 
@@ -54,7 +60,7 @@ public class AppIntegrationTests {
 
         List<ProductDto> products = result.getBody();
 
-        assertThat(products.size()).isEqualTo((Integer)1);
+        assertThat(products.size()).isEqualTo((Integer) 1);
         ProductDto product = products.get(0);
         assertThat(product.getId()).isNotNull();
         assertThat(product.getCreated_at()).isNotNull();
@@ -122,6 +128,62 @@ public class AppIntegrationTests {
 
     }
 
+    // Test Errors:
+
+    @Test
+    public void testErrorOnWrongQueryArgumentPage() {
+        // wrong page=A parameter, must be number
+        ResponseEntity<ErrorResponse> response = sendGetRequestFindProductsExpectingErrror(null, "A", null);
+
+        ErrorResponse error = response.getBody();
+
+        // Expect no results
+        assertThat(error.getStatus()).isEqualTo(400);
+        assertThat(error.getMessage()).isEqualToIgnoringCase("Bad request: Method Argument Type Mismatch.");
+
+    }
+
+    @Test
+    public void testErrorOnWrongQueryArgumentPageTooBig() {
+        // wrong page=A parameter, must be number
+        ResponseEntity<ErrorResponse> response = sendGetRequestFindProductsExpectingErrror(null, "1234567890123", null);
+
+        ErrorResponse error = response.getBody();
+
+        // Expect no results
+        assertThat(error.getStatus()).isEqualTo(400);
+        assertThat(error.getMessage()).isEqualToIgnoringCase("Bad request: Method Argument Type Mismatch.");
+    }
+
+
+    @Test
+    public void testErrorOnWrongJsonBody() {
+        ResponseEntity<ErrorResponse> response = this.restTemplate
+                .postForEntity("http://localhost:" + port + "/v1/products",
+                        httpEntityWithHeaders("{ bla = b }"), ErrorResponse.class);
+
+        ErrorResponse error = response.getBody();
+
+        // Expect no results
+        assertThat(error.getStatus()).isEqualTo(400);
+        assertThat(error.getMessage()).isEqualToIgnoringCase("Bad request: Message Not Readable.");
+
+    }
+
+    @Test
+    public void testErrorInternalError() {
+        // SQL exception - trying to insert product with empty fields
+        ResponseEntity<ErrorResponse> response = restTemplate.postForEntity("http://localhost:" + port + "/v1/products",
+                httpEntityWithHeaders("{}"), ErrorResponse.class);
+
+        ErrorResponse error = response.getBody();
+        log.info("Error: {}", error);
+
+        // Expect no results
+        assertThat(error.getStatus()).isEqualTo(500);
+        assertThat(error.getMessage()).containsIgnoringCase("Unexpected server error");
+    }
+
 
     // test helper to use in multiple tests: create product using POST
     private ResponseEntity<ProductDto> sendPostRequestCreateProduct(int n) {
@@ -138,7 +200,20 @@ public class AppIntegrationTests {
 
         return this.restTemplate.exchange(builder.toUriString(),
                 HttpMethod.GET, null,
-                new ParameterizedTypeReference<List<ProductDto>>() {});
+                new ParameterizedTypeReference<List<ProductDto>>() {
+                });
+    }
+
+    private ResponseEntity<ErrorResponse> sendGetRequestFindProductsExpectingErrror(String category, String page, String pageSize) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port + "/v1/products")
+                .queryParam("category", category)
+                .queryParam("page", page)
+                .queryParam("pageSize", pageSize);
+
+        return this.restTemplate.exchange(builder.toUriString(),
+                HttpMethod.GET, null,
+                new ParameterizedTypeReference<ErrorResponse>() {
+                });
     }
 
     private static void pause() {
@@ -147,5 +222,13 @@ public class AppIntegrationTests {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
+    }
+
+
+    private static HttpEntity httpEntityWithHeaders(String requestStr) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> request = new HttpEntity<String>(requestStr, headers);
+        return request;
     }
 }

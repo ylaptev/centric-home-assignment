@@ -13,6 +13,9 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
+/**
+ * ProductDto for JSON requests and responses.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,7 +28,7 @@ public class ProductEntity implements Serializable {
     private String name;
     private String description;
     private String brand;
-    private String tags;
+    private String tags; // tags list stored as comma separated list of tags
     private String category;
     private Date createdAt;
 

@@ -7,16 +7,21 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Simple mapper of ProductDto to ProductEntity and vice versa.
+ */
 public class Mapper {
 
     public static ProductEntity dtoToNewEntity(ProductDto product) {
+        // tags list stored as comma separated list of tags
+        String tags = product.getTags() != null ? String.join(",", product.getTags()) : null;
         return ProductEntity.builder()
                 .name(product.getName())
                 .description(product.getDescription())
                 .brand(product.getBrand())
                 .category(product.getCategory())
-                .tags(String.join(",", product.getTags()))
-                .createdAt(new Date())
+                .tags(tags)
+                .createdAt(new Date()) // overrides createdAt
                 .build();
     }
 

@@ -18,6 +18,7 @@ public class ProductService {
     private ProductRepository repo;
 
     /**
+     * Insert new project to repository.
      *
      * @param product
      * @return
