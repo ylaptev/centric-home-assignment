@@ -1,6 +1,6 @@
 # Home Assignment
 
-This is an implementation of CentricSoftware Home assignment.  
+This is an implementation of Home assignment.  
 
 ## Technologies
 
